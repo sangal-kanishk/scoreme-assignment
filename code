@@ -1,0 +1,38 @@
+import pdfplumber
+import pandas as pd
+
+# Function to extract transaction data from PDF
+def extract_transactions(pdf_path):
+    transactions = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text()
+            for line in text.split('\n'):
+                if any(char.isdigit() for char in line):  # Check if line contains transaction data
+                    # Split the line into components
+                    parts = line.split()
+                    if len(parts) >= 4:  # Ensure it's a valid transaction line
+                        date = parts[0]
+                        transaction_type = parts[1]
+                        reference = parts[2]
+                        amount = parts[-2]
+                        balance = parts[-1]
+                        description = ' '.join(parts[3:-2])
+                        transactions.append([date, transaction_type, reference, description, amount, balance])
+    return transactions
+
+# Function to create DataFrame and save to Excel
+def save_to_excel(transactions, output_path):
+    columns = ["Transaction Date", "Transaction Type", "Reference", "Description", "Amount", "Balance"]
+    df = pd.DataFrame(transactions, columns=columns)
+    df.to_excel(output_path, index=False)
+
+# Paths
+pdf_path = "test3.pdf"
+output_excel_path = "output_transactions.xlsx"
+
+# Extract transactions and save to Excel
+transactions = extract_transactions(pdf_path)
+save_to_excel(transactions, output_excel_path)
+
+print(f"Transactions saved to {output_excel_path}")
